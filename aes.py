@@ -79,19 +79,15 @@ class AES:
         for i in range(4, 4 * 11):
             self.round_keys.append([])
             if i % 4 == 0:
-                byte = self.round_keys[i - 4][0]        \
-                     ^ Sbox[self.round_keys[i - 1][1]]  \
-                     ^ Rcon[i // 4]
+                byte = self.round_keys[i - 4][0] ^ Sbox[self.round_keys[i - 1][1]] ^ Rcon[i // 4]
                 self.round_keys[i].append(byte)
 
                 for j in range(1, 4):
-                    byte = self.round_keys[i - 4][j]    \
-                         ^ Sbox[self.round_keys[i - 1][(j + 1) % 4]]
+                    byte = self.round_keys[i - 4][j] ^ Sbox[self.round_keys[i - 1][(j + 1) % 4]]
                     self.round_keys[i].append(byte)
             else:
                 for j in range(4):
-                    byte = self.round_keys[i - 4][j]    \
-                         ^ self.round_keys[i - 1][j]
+                    byte = self.round_keys[i - 4][j] ^ self.round_keys[i - 1][j]
                     self.round_keys[i].append(byte)
 
         # print self.round_keys
@@ -167,7 +163,6 @@ class AES:
         s[0][3], s[1][3], s[2][3], s[3][3] = s[1][3], s[2][3], s[3][3], s[0][3]
 
     def __mix_single_column(self, a):
-        # please see Sec 4.1.2 in The Design of Rijndael
         t = a[0] ^ a[1] ^ a[2] ^ a[3]
         u = a[0]
         a[0] ^= t ^ xtime(a[0] ^ a[1])
@@ -196,16 +191,19 @@ class AES:
 
 if __name__ == '__main__':
     key = 'HTptSMcrgxemfCxZ'
-    mess = 'lễ hội'
     aes = AES(int.from_bytes(key.encode(), 'big'))
+    n = len(key)
+    mess = 'chào các bạn'
+    print(f'{key=}')
+    print(f'Message: {mess}, length: {len(mess)}')
 
-    encrypted_text = aes.encrypt(int.from_bytes(mess.encode(), 'big'))
-    encrypted_text_hex = hex(encrypted_text)[2:]
+    print('\n'+'-'*10+'Encrypt'+'-'*10)
+    split_text = [int.from_bytes(mess[i:i+16].encode(), 'big') for i in range(0, len(mess), n)]
+    encrypted_text_hex = ''.join(str(hex(aes.encrypt(i))[2:]) for i in split_text)
     print(encrypted_text_hex)
-
-    ciphertext_bytes = bytes.fromhex(encrypted_text_hex)
-    ciphertext_int = int.from_bytes(ciphertext_bytes, byteorder='big')
-    decrypted_int = aes.decrypt(ciphertext_int)
-    byte_length = (decrypted_int.bit_length() + 7) // 8 or 16
-    decrypted_text = decrypted_int.to_bytes(byte_length, 'big').decode(errors='ignore').rstrip('\x00')
+    
+    print('\n'+'-'*10+'Decrypt'+'-'*10)
+    decrypted_int = [aes.decrypt(int.from_bytes(bytes.fromhex(encrypted_text_hex[i:i+32]), byteorder='big')) for i in range(0, len(encrypted_text_hex), 2*n)]
+    byte_length = [(i.bit_length() + 7) // 8 or 16 for i in decrypted_int]
+    decrypted_text = ''.join(decrypted_int[i].to_bytes(byte_length[i], 'big').decode(errors='ignore').rstrip('\x00') for i in range(len(decrypted_int)))
     print(decrypted_text)

@@ -1,4 +1,4 @@
-import random, math
+import random
 
 def is_prime(num:int=2) -> bool:
     if num < 2:
@@ -66,65 +66,58 @@ def generate_key_pair() -> dict:
     # step 5: select d from 1 to 2*phi such that (d*e)%phi = 1
     d = generate_d(e, phi)
 
-    return {'p':p, 'q':q, 'e':e, 'n':n, 'd':d, 'phi':phi, 'public_key': (n, e), 'private_key': (n, d)} #(n, e), (n, d)
+    return {'p':p, 'q':q, 'e':e, 'n':n, 'd':d, 'phi':phi, 'public_key': (n, e), 'private_key': (n, d)}
 
 ################################
 # encrypt and decrypt
-def list2text(lst:list) -> str:
+def vec2text(lst:list) -> str:
     return ''.join([chr(i) for i in lst])
     
-def text2list(text:str) -> list:
+def text2vec(text:str) -> list:
     return [ord(i) for i in text]
 
-def n_plit(n):
-    return math.ceil(math.log2(n + 1))
+def n_plit(dec_number):
+    return len(hex(dec_number)[2:])
 
-def dec2bin(num: int|list, n:int) -> str:
-    '''Convert decimal numbers to string binary'''
-    num = [num] if isinstance(num, int) else num
-    return ''.join([bin(i)[2:].zfill(n_plit(n)) for i in num])
+def dec2hex(num: list, n:int) -> str:
+    '''Convert decimal numbers to hex string'''
+    n_fill = n_plit(n)
+    return ''.join([str(hex(i)[2:]).zfill(n_fill) for i in num])
 
-def bin2dec(num: str, n:int) -> list:
-    '''Convert string binary to decimal numbers'''
-    return [int(num[i:i+n_plit(n)], 2) for i in range(0, len(num), n_plit(n))]
+def hex2dec(text: str, n:int) -> list:
+    '''Convert hex string to decimal numbers'''
+    i_split = n_plit(n)
+    return [int(text[i:i+i_split], 16) for i in range(0, len(text), i_split)]
 
 def encrypt(public_key:tuple, text:str) -> str:
     '''Encrypt text using public key (n, e), fomular: c = m^e mod n.'''
     n, e = public_key
-    vector = text2list(text)
+    vector = text2vec(text)
     vector_encrypt = [(pow(num, e, n)) for num in vector]
-    return {'vector': vector_encrypt, 'text': dec2bin(vector_encrypt, n)}
+    return {'vector': vector_encrypt, 'text': dec2hex(vector_encrypt, n)}
 
-def decrypt(private_key:tuple, src:str|list) -> dict:
+def decrypt(private_key:tuple, text:str) -> dict:
     '''Decrypt text using private key (n, d), fomular: m = c^d mod n.'''
     n, d = private_key
-    vector = src
-    if isinstance(src, str):
-        vector = bin2dec(src, n)
+    vector = hex2dec(text, n)
     vector_decrypt = [(pow(num, d, n)) for num in vector]
-    return {'vector': vector_decrypt, 'text': list2text(vector_decrypt)}
+    return {'vector': vector_decrypt, 'text': vec2text(vector_decrypt)}
 ################################
 
 if __name__ == '__main__':
     gen = generate_key_pair()
     u_key, r_key = gen['public_key'], gen['private_key']
-    message = 'bố mẹ'
+    message = 'chào các bạn'
     print(f'Public key (n, e): {u_key}')
     print(f'Private key (n, d): {r_key}')
-    print(f'Message: {message}, {text2list(message)}')
+    print(f'Message: {message}, {text2vec(message)}')
 
     print('\n'+'-'*10+'Encrypt'+'-'*10)
     en = encrypt(u_key, message)
-    print(f'Vector: {en["vector"]}')
-    print(f'Text: {en["text"]}')
+    print(f'Dec: {en["vector"]}')
+    print(f'Hex: {en["text"]}')
 
     print('\n'+'-'*10+'Decrypt'+'-'*10)
-    print(f'Using vector: {en["vector"]}')
-    de = decrypt(r_key, en['vector'])
-    print(f'Vector: {de["vector"]}')
-    print(f'Text: {de["text"]}')
-
-    print(f'Using binary: {en["text"]}')
     de = decrypt(r_key, en['text'])
     print(f'Vector: {de["vector"]}')
     print(f'Text: {de["text"]}')
