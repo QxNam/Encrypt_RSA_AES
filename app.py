@@ -1,10 +1,11 @@
 import streamlit as st
 from rsa import *
-from aes import AES
+# from aes_old import AES
+from aes import encrypt_long_text, decrypt_long_text
 import random, string
 
 # st.set_page_config(layout="wide")
-HEIGHT = 300
+HEIGHT = 150
 
 tab1, tab2 = st.tabs(['RSA', 'AES'])
 with tab1:
@@ -127,6 +128,7 @@ with tab2:
       en_col, opt, de_col = st.columns([2,1,2])
       with en_col:
          message_en = st.text_area(label="Enter Plain Text / Encrypted", height=HEIGHT, value=st.session_state.get('encrypt_aes', None), placeholder="Input text")
+         # message_en = st.text_input(label='Enter Plain Text / Encrypted', value=st.session_state.get('encrypt_aes', None), max_chars=16, key="aes_input")
       with opt:
          st.write("")
          en_btn = st.form_submit_button(label="Encrypt >>", )
@@ -134,23 +136,33 @@ with tab2:
       with de_col:
          message_de = st.text_area(label="Enter Encrypted Text / Decrypted", height=HEIGHT, value=st.session_state.get('decrypt_aes', None))
 
-      aes = AES(int.from_bytes(btn_key_aes.encode(), 'big'))
+      # aes = AES(int.from_bytes(btn_key_aes.encode(), 'big'))
+      
       if en_btn:
          with st.status("Encrypting..."):
             if message_en!=None:
-               split_text = [int.from_bytes(message_en[i:i+16].encode(), 'big') for i in range(0, len(message_en), 16)]
-               encrypted_text_hex = ''.join(str(hex(aes.encrypt(i))[2:]) for i in split_text)
+               en = encrypt_long_text(message_en, btn_key_aes)
+               # split_text = [int.from_bytes(message_en[i:i+16].encode(), 'big') for i in range(0, len(message_en), 16)]
+               # encrypted_text_hex = ''.join(str(hex(aes.encrypt(i))[2:]) for i in split_text)
+               # encrypted_text = aes.encrypt(int.from_bytes(message_en.encode(), 'big'))
+               # encrypted_text_hex = hex(encrypted_text)[2:] 
                st.session_state['encrypt_aes'] = None
-               st.session_state['decrypt_aes'] = encrypted_text_hex
+               st.session_state['decrypt_aes'] = en
          st.experimental_rerun()
 
       if de_btn:
          with st.status("Decrypting..."):
             if message_de!=None:
-               decrypted_int = [aes.decrypt(int.from_bytes(bytes.fromhex(message_de[i:i+32]), byteorder='big')) for i in range(0, len(message_de), 32)]
-               byte_length = [(i.bit_length() + 7) // 8 or 16 for i in decrypted_int]
-               decrypted_text = ''.join(decrypted_int[i].to_bytes(byte_length[i], 'big').decode(errors='ignore').rstrip('\x00') for i in range(len(decrypted_int)))
-               st.session_state['encrypt_aes'] = decrypted_text
+               # decrypted_int = [aes.decrypt(int.from_bytes(bytes.fromhex(message_de[i:i+32]), byteorder='big')) for i in range(0, len(message_de), 32)]
+               # byte_length = [(i.bit_length() + 7) // 8 or 16 for i in decrypted_int]
+               # decrypted_text = ''.join(decrypted_int[i].to_bytes(byte_length[i], 'big').decode(errors='ignore').rstrip('\x00') for i in range(len(decrypted_int)))
+               # ciphertext_bytes = bytes.fromhex(message_de)
+               # ciphertext_int = int.from_bytes(ciphertext_bytes, byteorder='big')
+               # decrypted_int = aes.decrypt(ciphertext_int)
+               # byte_length = (decrypted_int.bit_length() + 7) // 8 or 16
+               # decrypted_text = decrypted_int.to_bytes(byte_length, 'big').decode(errors='ignore').rstrip('\x00')
+               de = decrypt_long_text(message_de, btn_key_aes)
+               st.session_state['encrypt_aes'] = de
                st.session_state['decrypt_aes'] = None
          st.experimental_rerun()
 
